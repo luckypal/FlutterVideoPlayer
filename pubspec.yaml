@@ -28,7 +28,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   
-  gplayer: ^0.0.2
+  video_player: ^0.10.5
   sprintf: ^4.0.0
 
 # For information on the generic Dart part of this file, see the

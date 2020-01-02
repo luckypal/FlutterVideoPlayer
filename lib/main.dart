@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:gplayer/gplayer.dart';
+import 'package:video_player/video_player.dart';
 import 'dart:async';
 import 'package:sprintf/sprintf.dart';
+import 'package:flutter/scheduler.dart';
 
 void main() => runApp(App());
 
@@ -18,7 +19,7 @@ class App extends StatelessWidget {
           child: Center(
             child: Column(
               children: <Widget>[
-                VideoPlayer(),
+                HLSVideoPlayer(),
               ],
             ),
           ),
@@ -28,39 +29,45 @@ class App extends StatelessWidget {
   }
 }
 
-class VideoPlayer extends StatefulWidget {
-  VideoPlayer({Key key}) : super(key: key);
+class HLSVideoPlayer extends StatefulWidget {
+  HLSVideoPlayer({Key key}) : super(key: key);
 
   @override
-  VideoPlayerState createState() => VideoPlayerState();
+  HLSVideoPlayerState createState() => HLSVideoPlayerState();
 }
 
-class VideoPlayerState extends State<VideoPlayer> {
+class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   final Color controlColor = Color(0xFFF2622A);
 
   Timer _timer;
-  GPlayer player;
+  VideoPlayerController _videoController;
+  VoidCallback listener;
   double currentVideoPosition = 0;
+
+  HLSVideoPlayerState() {
+    listener = () {
+      SchedulerBinding.instance.addPostFrameCallback((_) => setState(() {}));
+    };
+  }
 
   @override
   void initState() {
     super.initState();
     //1.create & init player
-    player = GPlayer(
-      uri: 'http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4',
-      backgroudColor: Colors.grey,
-      looping: true,
-      )
-      ..init()
-      ..addListener((_) {
-      });
+    _videoController = VideoPlayerController.network('https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_20mb.mp4');
+    
+    _videoController.initialize();
+    _videoController.addListener(listener);
+    _videoController.setLooping(true);
+    _videoController.setVolume(1);
+    _videoController.play();
 
     startTimer();
   }
 
   @override
   void dispose() {
-    player?.dispose();
+    _videoController.dispose();
     _timer.cancel();
     super.dispose();
   }
@@ -71,9 +78,7 @@ class VideoPlayerState extends State<VideoPlayer> {
       oneSec,
       (Timer timer) => setState(() {
         this.setState((){
-          player.currentPosition.then((value) {
-            currentVideoPosition = value.inSeconds.toDouble();
-          });
+          currentVideoPosition = _videoController.value.position.inSeconds.toDouble();
         });
       }),
     );
@@ -157,14 +162,14 @@ class VideoPlayerState extends State<VideoPlayer> {
             ),
             IconButton(
               padding: EdgeInsets.all(0),
-              icon: Icon(player.isPlaying ? Icons.pause : Icons.play_arrow),
+              icon: Icon(_videoController.value.isPlaying ? Icons.pause : Icons.play_arrow),
               color: Colors.white,
               iconSize: buttonHeight,
               onPressed: () {
-                if (!player.isPlaying)
-                  player.start();
+                if (!_videoController.value.isPlaying)
+                  _videoController.play();
                 else
-                  player.pause();
+                  _videoController.pause();
               },
             ),
             IconButton(
@@ -212,7 +217,7 @@ class VideoPlayerState extends State<VideoPlayer> {
                   activeColor: controlColor,
                   inactiveColor: Colors.grey,
                   min: 0.0,
-                  max: player.duration.inSeconds.toDouble(),
+                  max: _videoController.value.initialized ? _videoController.value.duration.inSeconds.toDouble() : 0,
                   onChanged: (value) {
                     currentVideoPosition = value;
                   },
@@ -221,7 +226,7 @@ class VideoPlayerState extends State<VideoPlayer> {
                   },
                   onChangeEnd: (value) {
                     setState(() {
-                      player.seekTo(value.toInt() * 1000);
+                      _videoController.seekTo(Duration(seconds: value.toInt()));
                     });
                     // startTimer();
                   },
@@ -230,7 +235,7 @@ class VideoPlayerState extends State<VideoPlayer> {
               ),
             ),
             Text(
-              getTimeString(player.duration.inSeconds.toDouble()),
+              getTimeString(_videoController.value.initialized ? _videoController.value.duration.inSeconds.toDouble() : 0),
               style: TextStyle(
                 color: controlColor,
               ),
@@ -256,18 +261,17 @@ class VideoPlayerState extends State<VideoPlayer> {
     return Stack(
       children: [
         Container(
-          color: Colors.black,
           height: videoHeight,
-          child: player.display,
+          child: VideoPlayer(_videoController)
         ),
 
-        Container(
-          height: MediaQuery.of(context).size.width * 0.75,
-          child: Container(
-            color: Colors.black45,
-            height: MediaQuery.of(context).size.width * 0.75,
-          ),
-        ),
+        // Container(
+        //   height: MediaQuery.of(context).size.width * 0.75,
+        //   child: Container(
+        //     color: Colors.black45,
+        //     height: MediaQuery.of(context).size.width * 0.75,
+        //   ),
+        // ),
 
         topBarWidgets(),
 
