@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gplayer/gplayer.dart';
+import 'dart:async';
+import 'package:sprintf/sprintf.dart';
 
 void main() => runApp(App());
 
@@ -36,7 +38,9 @@ class VideoPlayer extends StatefulWidget {
 class VideoPlayerState extends State<VideoPlayer> {
   final Color controlColor = Color(0xFFF2622A);
 
+  Timer _timer;
   GPlayer player;
+  double currentVideoPosition = 0;
 
   @override
   void initState() {
@@ -48,16 +52,46 @@ class VideoPlayerState extends State<VideoPlayer> {
       looping: true,
       )
       ..init()
-      ..addListener((params) {
-        setState(() {
-        });
+      ..addListener((_) {
       });
+
+    startTimer();
   }
 
   @override
   void dispose() {
     player?.dispose();
+    _timer.cancel();
     super.dispose();
+  }
+
+  void startTimer() {
+    const oneSec = const Duration(seconds: 1);
+    _timer = new Timer.periodic(
+      oneSec,
+      (Timer timer) => setState(() {
+        this.setState((){
+          player.currentPosition.then((value) {
+            currentVideoPosition = value.inSeconds.toDouble();
+          });
+        });
+      }),
+    );
+  }
+
+  String getTimeString(double second) {
+    int hours = (second ~/ 3600).toInt();
+    int mins = (second % 3600 ~/ 60).toInt();
+    int seconds = (second % 60).toInt();
+
+    String returnValue = "";
+    if (hours > 0)
+      returnValue += sprintf("%02i:", [hours]);
+
+    returnValue += sprintf("%02i:", [mins]);
+    returnValue += sprintf("%02i", [seconds]);
+
+    return returnValue;
   }
 
   Widget topBarWidgets() {
@@ -123,10 +157,14 @@ class VideoPlayerState extends State<VideoPlayer> {
             ),
             IconButton(
               padding: EdgeInsets.all(0),
-              icon: Icon(Icons.pause),
+              icon: Icon(player.isPlaying ? Icons.pause : Icons.play_arrow),
               color: Colors.white,
               iconSize: buttonHeight,
               onPressed: () {
+                if (!player.isPlaying)
+                  player.start();
+                else
+                  player.pause();
               },
             ),
             IconButton(
@@ -162,7 +200,7 @@ class VideoPlayerState extends State<VideoPlayer> {
               },
             ),
             Text(
-              "0.49",
+              getTimeString(currentVideoPosition),
               style: TextStyle(
                 color: controlColor,
               ),
@@ -174,15 +212,25 @@ class VideoPlayerState extends State<VideoPlayer> {
                   activeColor: controlColor,
                   inactiveColor: Colors.grey,
                   min: 0.0,
-                  max: 15.0,
+                  max: player.duration.inSeconds.toDouble(),
                   onChanged: (value) {
+                    currentVideoPosition = value;
                   },
-                  value: 5,
+                  onChangeStart: (value) {
+                    // _timer.cancel();
+                  },
+                  onChangeEnd: (value) {
+                    setState(() {
+                      player.seekTo(value.toInt() * 1000);
+                    });
+                    // startTimer();
+                  },
+                  value: currentVideoPosition
                 ),
               ),
             ),
             Text(
-              "1.49",
+              getTimeString(player.duration.inSeconds.toDouble()),
               style: TextStyle(
                 color: controlColor,
               ),
@@ -204,7 +252,6 @@ class VideoPlayerState extends State<VideoPlayer> {
   @override
   Widget build(BuildContext context) {
     double videoHeight = MediaQuery.of(context).size.width * 0.75;
-    double buttonHeight = MediaQuery.of(context).size.width * 0.07;
 
     return Stack(
       children: [
