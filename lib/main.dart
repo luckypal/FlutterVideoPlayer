@@ -39,7 +39,8 @@ class HLSVideoPlayer extends StatefulWidget {
 class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   final Color controlColor = Color(0xFFF2622A);
 
-  Timer _timer;
+  Timer _timer; //Used for updating slider.
+  StreamSubscription<dynamic> autoHideControls;
   VideoPlayerController _videoController;
   VoidCallback listener;
   double currentVideoPosition = 0;
@@ -64,12 +65,15 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     _videoController.play();
 
     startTimer();
+    startOneshotTimer();
   }
 
   @override
   void dispose() {
     _videoController.dispose();
     _timer.cancel();
+    if (autoHideControls != null)
+      autoHideControls.cancel();
     super.dispose();
   }
 
@@ -83,6 +87,18 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
         });
       }),
     );
+  }
+
+  void startOneshotTimer() {
+    if (autoHideControls != null)
+      autoHideControls.cancel();
+
+    var future = new Future.delayed(const Duration(seconds: 4));
+    autoHideControls = future.asStream().listen((data) {
+      isShowControls = false;
+      autoHideControls.cancel();
+      autoHideControls = null;
+    });
   }
 
   String getTimeString(double second) {
@@ -171,6 +187,8 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
                   _videoController.play();
                 else
                   _videoController.pause();
+                  
+                startOneshotTimer();
               },
             ),
             IconButton(
@@ -274,6 +292,10 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
         GestureDetector(
           onTap: () {
             isShowControls = !isShowControls;
+            if (isShowControls)
+              startOneshotTimer();
+            else if (autoHideControls != null)
+              autoHideControls.cancel();
           },
           child: AnimatedContainer(
             height: MediaQuery.of(context).size.width * 0.75,
