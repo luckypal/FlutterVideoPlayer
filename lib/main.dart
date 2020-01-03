@@ -278,6 +278,11 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     return isShowControls || !_videoController.value.isPlaying || _videoController.value.isBuffering;
   }
 
+  bool isShowControl() {
+    if (_videoController.value.isBuffering) return false;
+    return isShowOverlay();
+  }
+
   @override
   Widget build(BuildContext context) {
     double videoHeight = MediaQuery.of(context).size.width * 0.75;
@@ -302,10 +307,13 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
             color: isShowOverlay() ? Colors.black45 : Colors.transparent,
             duration: Duration(milliseconds: 500),
             curve: Curves.fastOutSlowIn,
+            child: _videoController.value.isBuffering ? Center(
+              child: CircularProgressIndicator(),
+            ) : null,
           )
         ),
 
-        isShowOverlay() ?
+        isShowControl() ?
         Stack(
           children: [
             topBarWidgets(),
