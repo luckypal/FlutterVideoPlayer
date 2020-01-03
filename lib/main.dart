@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:async';
+import 'dart:math';
 import 'package:sprintf/sprintf.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -45,6 +46,9 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   VoidCallback listener;
   double currentVideoPosition = 0;
   bool isShowControls = true;
+  bool isShowQualityList = false;
+  int videoQuality = 0;
+  List<int> videoQualities = [];
 
   HLSVideoPlayerState() {
     listener = () {
@@ -63,6 +67,9 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     _videoController.setLooping(true);
     _videoController.setVolume(1);
     _videoController.play();
+
+    videoQualities = [240, 360, 480, 720, 960];
+    videoQuality = 720;
 
     startTimer();
     startOneshotTimer();
@@ -121,9 +128,50 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     return returnValue;
   }
 
+  Widget getVideoQualityWidgets(List<int> qualities) {
+    List<Widget> widgets = <Widget>[];
+    double itemHeight = MediaQuery.of(context).size.width * 0.14;
+    double widgetHeight = MediaQuery.of(context).size.width * 0.3;
+
+    double innerHeight = (26 * qualities.length).toDouble();
+
+    qualities.forEach((quality) {
+      MaterialButton button = MaterialButton(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        height: 0,
+        padding: EdgeInsets.fromLTRB(7, 5, itemHeight, 5),
+        minWidth: 0,
+        onPressed: () {onSetQuality(quality);},
+        child: Text(quality.toString() + "P",
+          style: TextStyle(
+            color: controlColor,
+          )
+        )
+      );
+
+      widgets.add(button);
+    });
+
+    return AnimatedContainer(
+      height: isShowQualityList ? min(widgetHeight, innerHeight) : 0,
+      color: Colors.black54,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: Column(
+          children: widgets,
+        )
+      ),
+      duration: Duration(milliseconds: 500),
+      curve: Curves.fastOutSlowIn,
+    );
+  }
+
   void onPressOverlay() {
     setState(() {
-      isShowControls = !isShowControls;
+      if (!isShowQualityList)
+        isShowControls = !isShowControls;
+      isShowQualityList = false;
+
       if (isShowControls)
         startOneshotTimer();
       else stopOneshotTimer();
@@ -135,7 +183,18 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   }
 
   void onPressQualityBtn() {
-    startOneshotTimer();
+    stopOneshotTimer();
+    setState(() {
+      isShowQualityList = !isShowQualityList;
+    });
+  }
+
+  void onSetQuality(int quality) {
+    setState(() {
+      videoQuality = quality;
+      isShowQualityList = false;
+      startOneshotTimer();
+    });
   }
 
   void onPressOptionBtn() {
@@ -175,46 +234,53 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   }
 
   Widget topBarWidgets() {
-    double iconButtonHeight = MediaQuery.of(context).size.width * 0.1;
-
     return Align(
-      alignment: Alignment.topCenter,
-      child: Container(
-        height: iconButtonHeight,
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Container(),
-            ),
-            MaterialButton(
-              padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
-              minWidth: 0,
-              onPressed: onPressSpeedBtn,
-              child: Text("1.0 X",
-                style: TextStyle(
-                  color: controlColor,
-                ),),
-            ),
-            MaterialButton(
-              padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
-              minWidth: 0,
-              onPressed: onPressQualityBtn,
-              child: Text("720P",
-                style: TextStyle(
-                  color: controlColor,
-                ),),
-            ),
-            MaterialButton(
-              padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
-              minWidth: 0,
-              onPressed: onPressOptionBtn,
-              child: Icon(
-                Icons.more_vert,
-                color: controlColor,
+      alignment: Alignment.topRight,
+      child: Column(
+        children: [
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Container(),
               ),
-            ),
-          ]
-        ),
+              MaterialButton(
+                padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+                minWidth: 0,
+                onPressed: onPressSpeedBtn,
+                child: Text("1.0 X",
+                  style: TextStyle(
+                    color: controlColor,
+                  ),),
+              ),
+              MaterialButton(
+                padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+                minWidth: 0,
+                onPressed: onPressQualityBtn,
+                child: Text(videoQuality.toString() + "P",
+                  style: TextStyle(
+                    color: controlColor,
+                  ),),
+              ),
+              MaterialButton(
+                padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+                minWidth: 0,
+                onPressed: onPressOptionBtn,
+                child: Icon(
+                  Icons.more_vert,
+                  color: controlColor,
+                ),
+              ),
+            ]
+          ),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Container(),
+              ),
+              getVideoQualityWidgets(videoQualities)
+            ]
+          )
+        ],
       ),
     );
   }
@@ -326,7 +392,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double videoHeight = width * 0.75;
-    double borderRadius = width * 0.05;
+    double borderRadius = width * 0.03;
 
     return ClipRRect(
       borderRadius:  BorderRadius.only(
@@ -356,11 +422,9 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
           isShowControl() ?
           Stack(
             children: [
-              topBarWidgets(),
-
+              bottomWidgets(),
               middleWidgets(),
-
-              bottomWidgets()
+              topBarWidgets(),
             ]
           ): Container(
               height: MediaQuery.of(context).size.width * 0.75
