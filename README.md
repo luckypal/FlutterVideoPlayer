@@ -1,6 +1,23 @@
-# hlsvideoplayer
+# Flutter HLS Video Player
 
 HLS video player with various features
+
+## Screenshots
+<img src="screenshots/0.png" width="280"> <img src="screenshots/1.png" width="280">
+
+## Components
+- flutter: `latest`
+- video_player: `^0.10.5`
+- sprintf: `^4.0.0`
+
+## Features
+- adaptive bitrate
+- ability to choose quality
+- Works in iOS and Android
+- Costume Design
+- ability to adjust speed x2 .... etc
+- seek 10 sec forward and backward
+- playing in background when exit app
 
 ## Getting Started
 
@@ -14,3 +31,27 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter, view our
 [online documentation](https://flutter.dev/docs), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## License
+
+```
+Copyright (c) 2020 LuckyPal IT
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
