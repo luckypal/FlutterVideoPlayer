@@ -72,8 +72,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   void dispose() {
     _videoController.dispose();
     _timer.cancel();
-    if (autoHideControls != null)
-      autoHideControls.cancel();
+    stopOneshotTimer();
     super.dispose();
   }
 
@@ -90,8 +89,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   }
 
   void startOneshotTimer() {
-    if (autoHideControls != null)
-      autoHideControls.cancel();
+    stopOneshotTimer();
 
     var future = new Future.delayed(const Duration(seconds: 4));
     autoHideControls = future.asStream().listen((data) {
@@ -99,6 +97,11 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
       autoHideControls.cancel();
       autoHideControls = null;
     });
+  }
+
+  void stopOneshotTimer() {
+    if (autoHideControls != null)
+      autoHideControls.cancel();
   }
 
   String getTimeString(double second) {
@@ -116,6 +119,31 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     return returnValue;
   }
 
+  void onPressSpeedBtn() {
+    startOneshotTimer();
+  }
+
+  void onPressQualityBtn() {
+    startOneshotTimer();
+  }
+
+  void onPressOptionBtn() {
+    startOneshotTimer();
+  }
+
+  void seekVideo(int seconds) {
+    _videoController.seekTo(_videoController.value.position + Duration(seconds: seconds));
+    startOneshotTimer();
+  }
+
+  void onPressBookmarkBtn() {
+    startOneshotTimer();
+  }
+
+  void onPressFullScreenBtn() {
+    startOneshotTimer();
+  }
+
   Widget topBarWidgets() {
     double iconButtonHeight = MediaQuery.of(context).size.width * 0.1;
 
@@ -130,8 +158,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
             MaterialButton(
               padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
               minWidth: 0,
-              onPressed: () {
-              },
+              onPressed: onPressSpeedBtn,
               child: Text("1.0 X",
                 style: TextStyle(
                   color: controlColor,
@@ -140,19 +167,20 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
             MaterialButton(
               padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
               minWidth: 0,
-              onPressed: () {
-              },
+              onPressed: onPressQualityBtn,
               child: Text("720P",
                 style: TextStyle(
                   color: controlColor,
                 ),),
             ),
-            IconButton(
-              padding: EdgeInsets.all(0),
-              icon: Icon(Icons.more_vert),
-              color: this.controlColor,
-              onPressed: () {
-              },
+            MaterialButton(
+              padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+              minWidth: 0,
+              onPressed: onPressOptionBtn,
+              child: Icon(
+                Icons.more_vert,
+                color: controlColor,
+              ),
             ),
           ]
         ),
@@ -174,8 +202,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
               icon: Icon(Icons.rotate_left),
               color: Colors.white,
               iconSize: buttonHeight,
-              onPressed: () {
-              },
+              onPressed: () {seekVideo(-10);},
             ),
             IconButton(
               padding: EdgeInsets.all(0),
@@ -196,8 +223,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
               icon: Icon(Icons.rotate_right),
               color: Colors.white,
               iconSize: buttonHeight,
-              onPressed: () {
-              },
+              onPressed: () {seekVideo(10);},
             ),
           ],
         )
@@ -214,14 +240,14 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
         alignment: Alignment.bottomCenter,
         child: Row(
           children: <Widget>[
-            IconButton(
-              splashColor: Colors.pink,
-              padding: EdgeInsets.all(0),
-              icon: Icon(Icons.bookmark_border),
-              color: this.controlColor,
-              iconSize: buttonHeight,
-              onPressed: () {
-              },
+            MaterialButton(
+              padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+              minWidth: 0,
+              onPressed: onPressBookmarkBtn,
+              child: Icon(
+                Icons.bookmark_border,
+                color: controlColor,
+              ),
             ),
             Text(
               getTimeString(currentVideoPosition),
@@ -242,11 +268,13 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
                   },
                   onChangeStart: (value) {
                     // _timer.cancel();
+                    stopOneshotTimer();
                   },
                   onChangeEnd: (value) {
                     setState(() {
                       _videoController.seekTo(Duration(seconds: value.toInt()));
                     });
+                    stopOneshotTimer();
                     // startTimer();
                   },
                   value: currentVideoPosition
@@ -259,13 +287,14 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
                 color: controlColor,
               ),
             ),
-            IconButton(
-              padding: EdgeInsets.all(0),
-              icon: Icon(Icons.zoom_out_map),
-              color: this.controlColor,
-              iconSize: buttonHeight,
-              onPressed: () {
-              },
+            MaterialButton(
+              padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
+              minWidth: 0,
+              onPressed: onPressFullScreenBtn,
+              child: Icon(
+                Icons.zoom_out_map,
+                color: controlColor,
+              ),
             ),
           ],
         )
@@ -299,8 +328,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
             isShowControls = !isShowControls;
             if (isShowControls)
               startOneshotTimer();
-            else if (autoHideControls != null)
-              autoHideControls.cancel();
+            else stopOneshotTimer();
           },
           child: AnimatedContainer(
             height: MediaQuery.of(context).size.width * 0.75,
