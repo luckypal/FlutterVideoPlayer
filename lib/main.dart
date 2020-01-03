@@ -43,6 +43,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   VideoPlayerController _videoController;
   VoidCallback listener;
   double currentVideoPosition = 0;
+  bool isShowControls = true;
 
   HLSVideoPlayerState() {
     listener = () {
@@ -254,6 +255,11 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     );
   }
 
+  bool isShowOverlay() {
+    if (!isShowControls) return false;
+    return isShowControls || !_videoController.value.isPlaying || _videoController.value.isBuffering;
+  }
+
   @override
   Widget build(BuildContext context) {
     double videoHeight = MediaQuery.of(context).size.width * 0.75;
@@ -265,19 +271,30 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
           child: VideoPlayer(_videoController)
         ),
 
-        // Container(
-        //   height: MediaQuery.of(context).size.width * 0.75,
-        //   child: Container(
-        //     color: Colors.black45,
-        //     height: MediaQuery.of(context).size.width * 0.75,
-        //   ),
-        // ),
+        GestureDetector(
+          onTap: () {
+            isShowControls = !isShowControls;
+          },
+          child: AnimatedContainer(
+            height: MediaQuery.of(context).size.width * 0.75,
+            color: isShowOverlay() ? Colors.black45 : Colors.transparent,
+            duration: Duration(milliseconds: 500),
+            curve: Curves.fastOutSlowIn,
+          )
+        ),
 
-        topBarWidgets(),
+        isShowOverlay() ?
+        Stack(
+          children: [
+            topBarWidgets(),
 
-        middleWidgets(),
+            middleWidgets(),
 
-        bottomWidgets()
+            bottomWidgets()
+          ]
+        ): Container(
+            height: MediaQuery.of(context).size.width * 0.75
+        )
       ]
     );
   }
