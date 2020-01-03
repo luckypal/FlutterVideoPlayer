@@ -93,7 +93,9 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
 
     var future = new Future.delayed(const Duration(seconds: 4));
     autoHideControls = future.asStream().listen((data) {
-      isShowControls = false;
+      setState(() {
+        isShowControls = false;
+      });
       autoHideControls.cancel();
       autoHideControls = null;
     });
@@ -119,6 +121,15 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     return returnValue;
   }
 
+  void onPressOverlay() {
+    setState(() {
+      isShowControls = !isShowControls;
+      if (isShowControls)
+        startOneshotTimer();
+      else stopOneshotTimer();
+    });
+  }
+
   void onPressSpeedBtn() {
     startOneshotTimer();
   }
@@ -136,6 +147,15 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     startOneshotTimer();
   }
 
+  void onPressPlayBtn() {
+    if (!_videoController.value.isPlaying)
+      _videoController.play();
+    else
+      _videoController.pause();
+      
+    startOneshotTimer();
+  }
+
   void onPressBookmarkBtn() {
     startOneshotTimer();
   }
@@ -144,10 +164,21 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     startOneshotTimer();
   }
 
+  bool isShowOverlay() {
+    if (!isShowControls) return false;
+    return isShowControls || !_videoController.value.isPlaying || _videoController.value.isBuffering;
+  }
+
+  bool isShowControl() {
+    if (_videoController.value.isBuffering) return false;
+    return isShowOverlay();
+  }
+
   Widget topBarWidgets() {
     double iconButtonHeight = MediaQuery.of(context).size.width * 0.1;
 
-    return Center(
+    return Align(
+      alignment: Alignment.topCenter,
       child: Container(
         height: iconButtonHeight,
         child: Row(
@@ -209,14 +240,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
               icon: Icon(_videoController.value.isPlaying ? Icons.pause : Icons.play_arrow),
               color: Colors.white,
               iconSize: buttonHeight,
-              onPressed: () {
-                if (!_videoController.value.isPlaying)
-                  _videoController.play();
-                else
-                  _videoController.pause();
-                  
-                startOneshotTimer();
-              },
+              onPressed: onPressPlayBtn,
             ),
             IconButton(
               padding: EdgeInsets.all(0),
@@ -267,15 +291,11 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
                     currentVideoPosition = value;
                   },
                   onChangeStart: (value) {
-                    // _timer.cancel();
                     stopOneshotTimer();
                   },
                   onChangeEnd: (value) {
-                    setState(() {
-                      _videoController.seekTo(Duration(seconds: value.toInt()));
-                    });
+                    _videoController.seekTo(Duration(seconds: value.toInt()));
                     stopOneshotTimer();
-                    // startTimer();
                   },
                   value: currentVideoPosition
                 ),
@@ -302,58 +322,51 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     );
   }
 
-  bool isShowOverlay() {
-    if (!isShowControls) return false;
-    return isShowControls || !_videoController.value.isPlaying || _videoController.value.isBuffering;
-  }
-
-  bool isShowControl() {
-    if (_videoController.value.isBuffering) return false;
-    return isShowOverlay();
-  }
-
   @override
   Widget build(BuildContext context) {
-    double videoHeight = MediaQuery.of(context).size.width * 0.75;
+    double width = MediaQuery.of(context).size.width;
+    double videoHeight = width * 0.75;
+    double borderRadius = width * 0.05;
 
-    return Stack(
-      children: [
-        Container(
-          height: videoHeight,
-          child: VideoPlayer(_videoController)
-        ),
+    return ClipRRect(
+      borderRadius:  BorderRadius.only(
+        bottomLeft: Radius.circular(borderRadius),
+        bottomRight: Radius.circular(borderRadius)
+      ),
+      child: Stack(
+        children: [
+          Container(
+            height: videoHeight,
+            child: VideoPlayer(_videoController)
+          ),
 
-        GestureDetector(
-          onTap: () {
-            isShowControls = !isShowControls;
-            if (isShowControls)
-              startOneshotTimer();
-            else stopOneshotTimer();
-          },
-          child: AnimatedContainer(
-            height: MediaQuery.of(context).size.width * 0.75,
-            color: isShowOverlay() ? Colors.black45 : Colors.transparent,
-            duration: Duration(milliseconds: 500),
-            curve: Curves.fastOutSlowIn,
-            child: _videoController.value.isBuffering ? Center(
-              child: CircularProgressIndicator(),
-            ) : null,
+          GestureDetector(
+            onTap: onPressOverlay,
+            child: AnimatedContainer(
+              height: MediaQuery.of(context).size.width * 0.75,
+              color: isShowOverlay() ? Colors.black45 : Colors.transparent,
+              duration: Duration(milliseconds: 500),
+              curve: Curves.fastOutSlowIn,
+              child: _videoController.value.isBuffering ? Center(
+                child: CircularProgressIndicator(),
+              ) : null,
+            )
+          ),
+
+          isShowControl() ?
+          Stack(
+            children: [
+              topBarWidgets(),
+
+              middleWidgets(),
+
+              bottomWidgets()
+            ]
+          ): Container(
+              height: MediaQuery.of(context).size.width * 0.75
           )
-        ),
-
-        isShowControl() ?
-        Stack(
-          children: [
-            topBarWidgets(),
-
-            middleWidgets(),
-
-            bottomWidgets()
-          ]
-        ): Container(
-            height: MediaQuery.of(context).size.width * 0.75
-        )
-      ]
+        ]
+      )
     );
   }
 }
