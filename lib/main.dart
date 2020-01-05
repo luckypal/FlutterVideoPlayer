@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:sprintf/sprintf.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:wakelock/wakelock.dart';
 
 void main() => runApp(App());
 
@@ -503,16 +504,12 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     }
 
     widget.controller.isFullScreen = true;
-    // if (!widget.controller.allowedScreenSleep) {
-    //   Wakelock.enable();
-    // }
+      Wakelock.enable();
 
     await Navigator.of(context, rootNavigator: true).push(route);
     widget.controller.isFullScreen = false;
 
-    // The wakelock plugins checks whether it needs to perform an action internally,
-    // so we do not need to check Wakelock.isEnabled.
-    // Wakelock.disable();
+    Wakelock.disable();
 
     SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
     SystemChrome.setPreferredOrientations([
