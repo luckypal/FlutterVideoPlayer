@@ -9,8 +9,20 @@ import 'package:flutter/scheduler.dart';
 void main() => runApp(App());
 
 class App extends StatelessWidget {
+
+  VideoPlayerController videoPlayerController;
+
+  // App({ Key key }) : super(key: key) {
+  // }
+
   @override
   Widget build(BuildContext context) {
+    videoPlayerController = VideoPlayerController.network('https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_20mb.mp4');
+    videoPlayerController.initialize();
+    videoPlayerController.setLooping(true);
+    videoPlayerController.setVolume(1);
+    videoPlayerController.play();
+
     return MaterialApp(
       title: 'HLS video player',
       theme: ThemeData(
@@ -21,7 +33,11 @@ class App extends StatelessWidget {
           child: Center(
             child: Column(
               children: <Widget>[
-                HLSVideoPlayer(),
+                HLSVideoPlayer(
+                  controller: new HLSVideoPlayerController(
+                    videoController: videoPlayerController),
+                  isFullScreenScreen: false,
+                ),
               ],
             ),
           ),
@@ -32,7 +48,14 @@ class App extends StatelessWidget {
 }
 
 class HLSVideoPlayer extends StatefulWidget {
-  HLSVideoPlayer({Key key}) : super(key: key);
+  HLSVideoPlayer({
+    Key key,
+    @required this.controller,
+    @required this.isFullScreenScreen,
+  }) : assert(controller != null), super(key: key);
+
+  final HLSVideoPlayerController controller;
+  final bool isFullScreenScreen;
 
   @override
   HLSVideoPlayerState createState() => HLSVideoPlayerState();
@@ -41,46 +64,17 @@ class HLSVideoPlayer extends StatefulWidget {
 class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   final Color controlColor = Color(0xFFF2622A);
 
-  Timer _timer; //Used for updating slider.
-  StreamSubscription<dynamic> autoHideControls;
-  VideoPlayerController _videoController;
-  VoidCallback listener;
-  double currentVideoPosition = 0;
-  bool isShowControls = true;
-
-  bool isShowQualityList = false;
-  int videoQuality = 0;
-  List<int> videoQualities = [];
-
-  bool isShowSpeedList = false;
-  double videoSpeed = 1;
-  List<double> videoSpeeds = [];
-
-  bool _isFullScreen = false;
-
   HLSVideoPlayerState() {
-    listener = () {
-      // SchedulerBinding.instance.addPostFrameCallback((_) => setState(() {}));
-    };
   }
 
   @override
   void initState() {
     super.initState();
-    //1.create & init player
-    _videoController = VideoPlayerController.network('https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_20mb.mp4');
-    
-    _videoController.initialize();
-    // _videoController.addListener(listener);
-    _videoController.setLooping(true);
-    _videoController.setVolume(1);
-    _videoController.play();
 
-    videoQualities = [240, 360, 480, 720, 960];
-    videoQuality = 720;
+    widget.controller.videoQualities = [240, 360, 480, 720, 960];
+    widget.controller.videoQuality = 720;
     
-    videoSpeeds = [0.5, 1, 2];
-    _videoController.setSpeed(videoSpeed);
+    widget.controller.videoSpeeds = [0.5, 1, 2];
 
     startTimer();
     startOneshotTimer();
@@ -88,19 +82,23 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
 
   @override
   void dispose() {
-    _videoController.dispose();
-    _timer.cancel();
-    stopOneshotTimer();
+    if (!widget.isFullScreenScreen) {
+      widget.controller.videoController.dispose();
+      widget.controller.timer.cancel();
+      stopOneshotTimer();
+    }
     super.dispose();
   }
+  
 
   void startTimer() {
     const oneSec = const Duration(seconds: 1);
-    _timer = new Timer.periodic(
+    widget.controller.timer = new Timer.periodic(
       oneSec,
-      (Timer timer) => setState(() {
+      (Timer timer) =>
+        setState(() {
         this.setState((){
-          currentVideoPosition = _videoController.value.position.inSeconds.toDouble();
+          widget.controller.currentVideoPosition = widget.controller.videoController.value.position.inSeconds.toDouble();
         });
       }),
     );
@@ -110,18 +108,18 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     stopOneshotTimer();
 
     var future = new Future.delayed(const Duration(seconds: 4));
-    autoHideControls = future.asStream().listen((data) {
+    widget.controller.autoHideControls = future.asStream().listen((data) {
       setState(() {
-        isShowControls = false;
+        widget.controller.isShowControls = false;
       });
-      autoHideControls.cancel();
-      autoHideControls = null;
+      widget.controller.autoHideControls.cancel();
+      widget.controller.autoHideControls = null;
     });
   }
 
   void stopOneshotTimer() {
-    if (autoHideControls != null)
-      autoHideControls.cancel();
+    if (widget.controller.autoHideControls != null)
+      widget.controller.autoHideControls.cancel();
   }
 
   String getTimeString(double second) {
@@ -179,11 +177,11 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
 
   void onPressOverlay() {
     setState(() {
-      if (!isShowQualityList)
-        isShowControls = !isShowControls;
-      isShowQualityList = false;
+      if (!widget.controller.isShowQualityList)
+        widget.controller.isShowControls = !widget.controller.isShowControls;
+      widget.controller.isShowQualityList = false;
 
-      if (isShowControls)
+      if (widget.controller.isShowControls)
         startOneshotTimer();
       else stopOneshotTimer();
     });
@@ -192,31 +190,31 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   void onPressSpeedBtn() {
     startOneshotTimer();
     setState(() {
-      isShowSpeedList = !isShowSpeedList;
+      widget.controller.isShowSpeedList = !widget.controller.isShowSpeedList;
     });
   }
 
   void onPressQualityBtn() {
     stopOneshotTimer();
     setState(() {
-      isShowQualityList = !isShowQualityList;
+      widget.controller.isShowQualityList = !widget.controller.isShowQualityList;
     });
   }
 
   void onSetQuality(int quality) {
     setState(() {
-      videoQuality = quality;
-      isShowQualityList = false;
+      widget.controller.videoQuality = quality;
+      widget.controller.isShowQualityList = false;
       startOneshotTimer();
     });
   }
 
   void onSetSpeed(double speed) {
-    _videoController.setSpeed(speed);
+    widget.controller.videoController.setSpeed(speed);
 
     setState(() {
-      videoSpeed = speed;
-      isShowSpeedList = false;
+      widget.controller.videoSpeed = speed;
+      widget.controller.isShowSpeedList = false;
       startOneshotTimer();
     });
   }
@@ -226,15 +224,15 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   }
 
   void seekVideo(int seconds) {
-    _videoController.seekTo(_videoController.value.position + Duration(seconds: seconds));
+    widget.controller.videoController.seekTo(widget.controller.videoController.value.position + Duration(seconds: seconds));
     startOneshotTimer();
   }
 
   void onPressPlayBtn() {
-    if (!_videoController.value.isPlaying)
-      _videoController.play();
+    if (!widget.controller.videoController.value.isPlaying)
+      widget.controller.videoController.play();
     else
-      _videoController.pause();
+      widget.controller.videoController.pause();
       
     startOneshotTimer();
   }
@@ -251,17 +249,24 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   }
 
   void enterFullScreen() {
-    _isFullScreen = true;
-    _pushFullScreenWidget();
+    if (!widget.controller.isFullScreen) {
+      widget.controller.isFullScreen = true;
+      pushFullScreenWidget();
+    } else {
+      widget.controller.isFullScreen = false;
+      Navigator.of(context, rootNavigator: true).pop();
+    }
   }
 
   bool isShowOverlay() {
-    if (!isShowControls) return false;
-    return isShowControls || !_videoController.value.isPlaying || _videoController.value.isBuffering;
+    if (!widget.controller.isShowControls) return false;
+    return widget.controller.isShowControls
+          || !widget.controller.videoController.value.isPlaying
+          || widget.controller.videoController.value.isBuffering;
   }
 
   bool isShowControl() {
-    if (_videoController.value.isBuffering) return false;
+    if (widget.controller.videoController.value.isBuffering) return false;
     return isShowOverlay();
   }
 
@@ -279,7 +284,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
                 padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
                 minWidth: 0,
                 onPressed: onPressSpeedBtn,
-                child: Text(videoSpeed.toString() + " X",
+                child: Text(widget.controller.videoSpeed.toString() + " X",
                   style: TextStyle(
                     color: controlColor,
                   ),),
@@ -288,7 +293,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
                 padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
                 minWidth: 0,
                 onPressed: onPressQualityBtn,
-                child: Text(videoQuality.toString() + "P",
+                child: Text(widget.controller.videoQuality.toString() + "P",
                   style: TextStyle(
                     color: controlColor,
                   ),),
@@ -309,8 +314,8 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
               Expanded(
                 child: Container(),
               ),
-              getDropdownWidgets(videoSpeeds, " X", isShowSpeedList, onSetSpeed),
-              getDropdownWidgets(videoQualities, "P", isShowQualityList, onSetQuality)
+              getDropdownWidgets(widget.controller.videoSpeeds, " X", widget.controller.isShowSpeedList, onSetSpeed),
+              getDropdownWidgets(widget.controller.videoQualities, "P", widget.controller.isShowQualityList, onSetQuality)
             ]
           )
         ],
@@ -336,7 +341,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
             ),
             IconButton(
               padding: EdgeInsets.all(0),
-              icon: Icon(_videoController.value.isPlaying ? Icons.pause : Icons.play_arrow),
+              icon: Icon(widget.controller.videoController.value.isPlaying ? Icons.pause : Icons.play_arrow),
               color: Colors.white,
               iconSize: buttonHeight,
               onPressed: onPressPlayBtn,
@@ -373,7 +378,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
               ),
             ),
             Text(
-              getTimeString(currentVideoPosition),
+              getTimeString(widget.controller.currentVideoPosition),
               style: TextStyle(
                 color: controlColor,
               ),
@@ -385,23 +390,23 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
                   activeColor: controlColor,
                   inactiveColor: Colors.grey,
                   min: 0.0,
-                  max: _videoController.value.initialized ? _videoController.value.duration.inSeconds.toDouble() : 0,
+                  max: widget.controller.videoController.value.initialized ? widget.controller.videoController.value.duration.inSeconds.toDouble() : 0,
                   onChanged: (value) {
-                    currentVideoPosition = value;
+                    widget.controller.currentVideoPosition = value;
                   },
                   onChangeStart: (value) {
                     stopOneshotTimer();
                   },
                   onChangeEnd: (value) {
-                    _videoController.seekTo(Duration(seconds: value.toInt()));
+                    widget.controller.videoController.seekTo(Duration(seconds: value.toInt()));
                     stopOneshotTimer();
                   },
-                  value: currentVideoPosition
+                  value: widget.controller.currentVideoPosition
                 ),
               ),
             ),
             Text(
-              getTimeString(_videoController.value.initialized ? _videoController.value.duration.inSeconds.toDouble() : 0),
+              getTimeString(widget.controller.videoController.value.initialized ? widget.controller.videoController.value.duration.inSeconds.toDouble() : 0),
               style: TextStyle(
                 color: controlColor,
               ),
@@ -436,7 +441,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
         children: [
           Container(
             height: videoHeight,
-            child: VideoPlayer(_videoController)
+            child: VideoPlayer(widget.controller.videoController)
           ),
 
           GestureDetector(
@@ -446,7 +451,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
               color: isShowOverlay() ? Colors.black45 : Colors.transparent,
               duration: Duration(milliseconds: 500),
               curve: Curves.fastOutSlowIn,
-              child: _videoController.value.isBuffering ? Center(
+              child: widget.controller.videoController.value.isBuffering ? Center(
                 child: CircularProgressIndicator(),
               ) : null,
             )
@@ -477,12 +482,12 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
       body: Container(
         alignment: Alignment.center,
         color: Colors.black,
-        child: widget,
+        child: HLSVideoPlayer(controller: widget.controller, isFullScreenScreen: true),
       ),
     );
   }
 
-  Future<dynamic> _pushFullScreenWidget() async {
+  Future<dynamic> pushFullScreenWidget() async {
     final isAndroid = Theme.of(context).platform == TargetPlatform.android;
     final TransitionRoute<Null> route = PageRouteBuilder<Null>(
       settings: RouteSettings(isInitialRoute: false),
@@ -497,13 +502,13 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
       ]);
     }
 
+    widget.controller.isFullScreen = true;
     // if (!widget.controller.allowedScreenSleep) {
     //   Wakelock.enable();
     // }
 
     await Navigator.of(context, rootNavigator: true).push(route);
-    _isFullScreen = false;
-    // widget.controller.exitFullScreen();
+    widget.controller.isFullScreen = false;
 
     // The wakelock plugins checks whether it needs to perform an action internally,
     // so we do not need to check Wakelock.isEnabled.
@@ -513,5 +518,36 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
+  }
+}
+
+class HLSVideoPlayerController {
+  HLSVideoPlayerController({
+    this.videoController,
+    // this.timer,
+    // this.autoHideControls
+  }) : assert(videoController != null,
+            'You must provide a controller to play a video') {
+    _initialize();
+  }
+
+  VideoPlayerController videoController;
+  Timer timer; //Used for updating slider.
+  StreamSubscription<dynamic> autoHideControls;
+  double currentVideoPosition = 0;
+  bool isShowControls = true;
+
+  bool isShowQualityList = false;
+  int videoQuality = 0;
+  List<int> videoQualities = [];
+
+  bool isShowSpeedList = false;
+  double videoSpeed = 1;
+  List<double> videoSpeeds = [0.5, 1, 2];
+
+  bool isFullScreen = false;
+
+  
+  Future _initialize() async {
   }
 }
