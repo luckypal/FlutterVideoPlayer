@@ -46,13 +46,18 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   VoidCallback listener;
   double currentVideoPosition = 0;
   bool isShowControls = true;
+
   bool isShowQualityList = false;
   int videoQuality = 0;
   List<int> videoQualities = [];
 
+  bool isShowSpeedList = false;
+  double videoSpeed = 1;
+  List<double> videoSpeeds = [];
+
   HLSVideoPlayerState() {
     listener = () {
-      SchedulerBinding.instance.addPostFrameCallback((_) => setState(() {}));
+      // SchedulerBinding.instance.addPostFrameCallback((_) => setState(() {}));
     };
   }
 
@@ -63,13 +68,16 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     _videoController = VideoPlayerController.network('https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_20mb.mp4');
     
     _videoController.initialize();
-    _videoController.addListener(listener);
+    // _videoController.addListener(listener);
     _videoController.setLooping(true);
     _videoController.setVolume(1);
     _videoController.play();
 
     videoQualities = [240, 360, 480, 720, 960];
     videoQuality = 720;
+    
+    videoSpeeds = [0.5, 1, 2];
+    _videoController.setSpeed(videoSpeed);
 
     startTimer();
     startOneshotTimer();
@@ -128,21 +136,21 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     return returnValue;
   }
 
-  Widget getVideoQualityWidgets(List<int> qualities) {
+  Widget getDropdownWidgets(List items, String suffix, bool isShow, Function onPressItem) {
     List<Widget> widgets = <Widget>[];
     double itemHeight = MediaQuery.of(context).size.width * 0.14;
     double widgetHeight = MediaQuery.of(context).size.width * 0.3;
 
-    double innerHeight = (26 * qualities.length).toDouble();
+    double innerHeight = (26 * items.length).toDouble();
 
-    qualities.forEach((quality) {
+    items.forEach((item) {
       MaterialButton button = MaterialButton(
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         height: 0,
         padding: EdgeInsets.fromLTRB(7, 5, itemHeight, 5),
         minWidth: 0,
-        onPressed: () {onSetQuality(quality);},
-        child: Text(quality.toString() + "P",
+        onPressed: () {onPressItem(item);},
+        child: Text(item.toString() + suffix,
           style: TextStyle(
             color: controlColor,
           )
@@ -153,7 +161,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     });
 
     return AnimatedContainer(
-      height: isShowQualityList ? min(widgetHeight, innerHeight) : 0,
+      height: isShow ? min(widgetHeight, innerHeight) : 0,
       color: Colors.black54,
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
@@ -180,6 +188,9 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
 
   void onPressSpeedBtn() {
     startOneshotTimer();
+    setState(() {
+      isShowSpeedList = !isShowSpeedList;
+    });
   }
 
   void onPressQualityBtn() {
@@ -193,6 +204,16 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     setState(() {
       videoQuality = quality;
       isShowQualityList = false;
+      startOneshotTimer();
+    });
+  }
+
+  void onSetSpeed(double speed) {
+    _videoController.setSpeed(speed);
+
+    setState(() {
+      videoSpeed = speed;
+      isShowSpeedList = false;
       startOneshotTimer();
     });
   }
@@ -247,7 +268,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
                 padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
                 minWidth: 0,
                 onPressed: onPressSpeedBtn,
-                child: Text("1.0 X",
+                child: Text(videoSpeed.toString() + " X",
                   style: TextStyle(
                     color: controlColor,
                   ),),
@@ -277,7 +298,8 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
               Expanded(
                 child: Container(),
               ),
-              getVideoQualityWidgets(videoQualities)
+              getDropdownWidgets(videoSpeeds, " X", isShowSpeedList, onSetSpeed),
+              getDropdownWidgets(videoQualities, "P", isShowQualityList, onSetQuality)
             ]
           )
         ],
