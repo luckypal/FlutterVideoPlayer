@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hlsvideoplayer/videoitem.dart';
 import 'package:video_player/video_player.dart';
@@ -53,6 +54,27 @@ class VideoContainer extends StatefulWidget {
   _VideoContainerState createState() => _VideoContainerState();
 }
 
+class LifecycleEventHandler extends WidgetsBindingObserver {
+  LifecycleEventHandler({this.resumeCallBack, this.suspendingCallBack});
+
+  final AsyncCallback resumeCallBack;
+  final AsyncCallback suspendingCallBack;
+
+  @override
+  Future<Null> didChangeAppLifecycleState(AppLifecycleState state) async {
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        await suspendingCallBack();
+        break;
+      case AppLifecycleState.resumed:
+        await resumeCallBack();
+        break;
+    }
+  }
+}
+
 class _VideoContainerState extends State<VideoContainer>
     with SingleTickerProviderStateMixin {
   // AnimationController _controller;
@@ -72,6 +94,17 @@ class _VideoContainerState extends State<VideoContainer>
         initVideoPlayerController(list);
       });
     }));
+
+    
+    WidgetsBinding.instance.addObserver(
+      new LifecycleEventHandler(
+        resumeCallBack: () {
+          videoPlayerController.isActive = true;
+        },
+        suspendingCallBack: () {
+          videoPlayerController.isActive = false;
+        })
+    );
   }
 
   initVideoPlayerController(List<M3uGenericEntry> list) {

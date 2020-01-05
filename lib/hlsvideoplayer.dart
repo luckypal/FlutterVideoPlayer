@@ -32,25 +32,14 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   void initState() {
     super.initState();
     
-    // if (widget.controller == null) {
-    //   if (widget.playList.length > 0) widget.curPlaylistIndex = 0;
-
-    //   VideoPlayerController videoPlayerController;
-    //   videoPlayerController = VideoPlayerController.network(widget.playList [widget.curPlaylistIndex].videoUri);
-    //   videoPlayerController.initialize();
-    //   videoPlayerController.setLooping(true);
-    //   videoPlayerController.setVolume(1);
-    //   videoPlayerController.play();
-
-    //   widget.controller = new HLSVideoPlayerController(
-    //     playList: widget.playList,
-    //     curPlaylistIndex: widget.curPlaylistIndex,
-    //     videoController: videoPlayerController
-    //   );
-    // }
-
     startTimer();
     startOneshotTimer();
+  }
+
+  @override
+  void deactivate() {
+    widget.controller.videoController.setVolume(1.0);
+    super.deactivate();
   }
 
   @override
@@ -70,9 +59,12 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
       oneSec,
       (Timer timer) =>
         setState(() {
-        this.setState((){
-          widget.controller.currentVideoPosition = widget.controller.videoController.value.position.inSeconds.toDouble();
-        });
+          if (!widget.controller.isActive) {
+            widget.controller.videoController.play();
+          }
+          this.setState((){
+            widget.controller.currentVideoPosition = widget.controller.videoController.value.position.inSeconds.toDouble();
+          });
       }),
     );
   }
@@ -547,7 +539,7 @@ class HLSVideoPlayerController {
   List<double> videoSpeeds = [0.5, 1, 2];
 
   bool isFullScreen = false;
-
+  bool isActive = true;
   
   Future _initialize() async {
     videoQualities = [];
