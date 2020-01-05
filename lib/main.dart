@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:async';
 import 'dart:math';
@@ -54,6 +55,8 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   bool isShowSpeedList = false;
   double videoSpeed = 1;
   List<double> videoSpeeds = [];
+
+  bool _isFullScreen = false;
 
   HLSVideoPlayerState() {
     listener = () {
@@ -242,6 +245,14 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
 
   void onPressFullScreenBtn() {
     startOneshotTimer();
+    setState(() {
+      enterFullScreen();
+    });
+  }
+
+  void enterFullScreen() {
+    _isFullScreen = true;
+    _pushFullScreenWidget();
   }
 
   bool isShowOverlay() {
@@ -454,5 +465,53 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
         ]
       )
     );
+  }
+
+  Widget _fullScreenRoutePageBuilder(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return Scaffold(
+      resizeToAvoidBottomPadding: false,
+      body: Container(
+        alignment: Alignment.center,
+        color: Colors.black,
+        child: widget,
+      ),
+    );
+  }
+
+  Future<dynamic> _pushFullScreenWidget() async {
+    final isAndroid = Theme.of(context).platform == TargetPlatform.android;
+    final TransitionRoute<Null> route = PageRouteBuilder<Null>(
+      settings: RouteSettings(isInitialRoute: false),
+      pageBuilder: _fullScreenRoutePageBuilder,
+    );
+
+    SystemChrome.setEnabledSystemUIOverlays([]);
+    if (isAndroid) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
+
+    // if (!widget.controller.allowedScreenSleep) {
+    //   Wakelock.enable();
+    // }
+
+    await Navigator.of(context, rootNavigator: true).push(route);
+    _isFullScreen = false;
+    // widget.controller.exitFullScreen();
+
+    // The wakelock plugins checks whether it needs to perform an action internally,
+    // so we do not need to check Wakelock.isEnabled.
+    // Wakelock.disable();
+
+    SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
   }
 }
