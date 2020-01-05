@@ -91,6 +91,9 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   }
 
   void stopOneshotTimer() {
+    widget.controller.isShowQualityList = false;
+    widget.controller.isShowSpeedList = false;
+
     if (widget.controller.autoHideControls != null)
       widget.controller.autoHideControls.cancel();
   }
@@ -150,9 +153,9 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
 
   void onPressOverlay() {
     setState(() {
-      if (!widget.controller.isShowQualityList)
+      if (!widget.controller.isShowQualityList
+        && !widget.controller.isShowSpeedList)
         widget.controller.isShowControls = !widget.controller.isShowControls;
-      widget.controller.isShowQualityList = false;
 
       if (widget.controller.isShowControls)
         startOneshotTimer();
@@ -174,10 +177,38 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     });
   }
 
-  void onSetQuality(int index) {
-    setState(() {
+  void onSetQuality(String quality) {
+    int index = -1, i = 0;
+    widget.controller.playList.forEach((item) {
+      if (item.resoultion == quality)
+        index = i;
+      else i ++;
+    });
+
+    if (widget.controller.curPlaylistIndex == index) return;
+
+    setState(() async {
+      int oldIndex = widget.controller.curPlaylistIndex;
+      double curPosition = widget.controller.currentVideoPosition;
+
       widget.controller.curPlaylistIndex = index;
       widget.controller.isShowQualityList = false;
+      widget.controller.videoController.pause();
+      widget.playList [oldIndex].videoController = widget.controller.videoController;
+
+      VideoItem curPlayItem = widget.playList [index];
+      if (curPlayItem.videoController != null) {
+        widget.controller.videoController = curPlayItem.videoController;
+      } else {
+        widget.controller.videoController = VideoPlayerController.network(curPlayItem.videoUri);
+        await widget.controller.videoController.initialize();
+        await widget.controller.videoController.setLooping(true);
+      }
+      await widget.controller.videoController.initialize();
+      await widget.controller.videoController.setLooping(true);
+      await widget.controller.videoController.play();
+      await widget.controller.videoController.seekTo(Duration(seconds: curPosition.toInt()));
+      await widget.controller.videoController.setSpeed(widget.controller.videoSpeed);
       startOneshotTimer();
     });
   }
