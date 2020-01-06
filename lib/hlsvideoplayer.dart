@@ -177,7 +177,10 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
       else i ++;
     });
 
-    if (widget.controller.curPlaylistIndex == index) return;
+    if (widget.controller.curPlaylistIndex == index) {
+      startOneshotTimer();
+      return;
+    }
 
     setState(() async {
       int oldIndex = widget.controller.curPlaylistIndex;
