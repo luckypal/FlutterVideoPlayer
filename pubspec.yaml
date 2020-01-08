@@ -41,6 +41,7 @@ dev_dependencies:
     git:
       url: https://github.com/Zeratyll/flutter_media_notification.git
       # path: 
+  connectivity: ^0.4.6+2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -8,6 +8,7 @@ import 'package:hlsvideoplayer/videoitem.dart';
 import 'package:video_player/video_player.dart';
 import 'package:m3u/m3u.dart';
 import 'package:media_notification/media_notification.dart';
+import 'package:connectivity/connectivity.dart';
 
 import 'hlsvideoplayer.dart';
 
@@ -161,7 +162,7 @@ class _VideoContainerState extends State<VideoContainer>
     }
   }
 
-  initVideoPlayerController(List<M3uGenericEntry> list) {
+  initVideoPlayerController(List<M3uGenericEntry> list) async {
     Uri uri = Uri.parse(widget.playlistUrl);
     String path = uri.origin + uri.path;
     String directory = path.substring(0, path.lastIndexOf("/") + 1);
@@ -186,8 +187,15 @@ class _VideoContainerState extends State<VideoContainer>
       ));
     });
 
+    int index = 0;
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    switch (connectivityResult) {
+      case ConnectivityResult.wifi:
+      case ConnectivityResult.none: index = 0; break;
+      case ConnectivityResult.mobile: index = pList.length - 1; break;
+    }
     VideoPlayerController videoPlayerController;
-    videoPlayerController = VideoPlayerController.network(pList [0].videoUri);
+    videoPlayerController = VideoPlayerController.network(pList [index].videoUri);
     videoPlayerController.initialize();
     videoPlayerController.setLooping(true);
     videoPlayerController.play();

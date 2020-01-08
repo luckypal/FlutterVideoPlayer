@@ -183,6 +183,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
     }
 
     setState(() async {
+      widget.controller.isAutoSelectedQuality = false;
       int oldIndex = widget.controller.curPlaylistIndex;
       double curPosition = widget.controller.currentVideoPosition;
 
@@ -292,7 +293,7 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
                 padding: EdgeInsets.fromLTRB(5, 0, 5, 0),
                 minWidth: 0,
                 onPressed: onPressQualityBtn,
-                child: Text(widget.controller.videoQualities [widget.controller.curPlaylistIndex],
+                child: Text(getVideoQualityString(),
                   style: TextStyle(
                     color: controlColor,
                   ),),
@@ -320,6 +321,13 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
         ],
       ),
     );
+  }
+
+  getVideoQualityString() {
+    String quality = widget.controller.videoQualities [widget.controller.curPlaylistIndex];
+    if (widget.controller.isAutoSelectedQuality)
+      return "Auto (" + quality + ")";
+    return quality;
   }
 
   Widget middleWidgets() {
@@ -536,6 +544,7 @@ class HLSVideoPlayerController {
 
   bool isShowQualityList = false;
   List<String> videoQualities = [];
+  bool isAutoSelectedQuality = true;
 
   bool isShowSpeedList = false;
   double videoSpeed = 1;
