@@ -95,6 +95,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.12.6"
+  media_notification:
+    dependency: "direct dev"
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: d27f4311873fbb0804d69b385eb6f08b1018da92
+      url: "https://github.com/Zeratyll/flutter_media_notification.git"
+    source: git
+    version: "0.0.5"
   meta:
     dependency: transitive
     description:

@@ -59,9 +59,9 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
       oneSec,
       (Timer timer) =>
         setState(() {
-          if (!widget.controller.isActive) {
-            widget.controller.videoController.play();
-          }
+          // if (!widget.controller.isActive) {
+            // widget.controller.videoController.play();
+          // }
           this.setState((){
             widget.controller.currentVideoPosition = widget.controller.videoController.value.position.inSeconds.toDouble();
           });
@@ -203,13 +203,13 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
       await widget.controller.videoController.setLooping(true);
       await widget.controller.videoController.play();
       await widget.controller.videoController.seekTo(Duration(seconds: curPosition.toInt()));
-      await widget.controller.videoController.setSpeed(widget.controller.videoSpeed);
+      // await widget.controller.videoController.setSpeed(widget.controller.videoSpeed);
       startOneshotTimer();
     });
   }
 
   void onSetSpeed(double speed) {
-    widget.controller.videoController.setSpeed(speed);
+    // widget.controller.videoController.setSpeed(speed);
 
     setState(() {
       widget.controller.videoSpeed = speed;
@@ -542,7 +542,7 @@ class HLSVideoPlayerController {
   List<double> videoSpeeds = [0.5, 1, 2];
 
   bool isFullScreen = false;
-  bool isActive = true;
+  // bool isActive = true;
   
   Future _initialize() async {
     videoQualities = [];

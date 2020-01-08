@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hlsvideoplayer/videoitem.dart';
 import 'package:video_player/video_player.dart';
 import 'package:m3u/m3u.dart';
+import 'package:media_notification/media_notification.dart';
 
 import 'hlsvideoplayer.dart';
 
@@ -55,20 +57,29 @@ class VideoContainer extends StatefulWidget {
 }
 
 class LifecycleEventHandler extends WidgetsBindingObserver {
-  LifecycleEventHandler({this.resumeCallBack, this.suspendingCallBack});
+  LifecycleEventHandler({this.resumeCallBack, this.suspendingCallBack, this.detachedCallBack});
 
   final AsyncCallback resumeCallBack;
   final AsyncCallback suspendingCallBack;
+  final AsyncCallback detachedCallBack;
 
   @override
   Future<Null> didChangeAppLifecycleState(AppLifecycleState state) async {
     switch (state) {
       case AppLifecycleState.inactive:
-      case AppLifecycleState.paused:
-      case AppLifecycleState.detached:
         await suspendingCallBack();
+        print("inactive");
+        break;
+      case AppLifecycleState.paused:
+        await suspendingCallBack();
+        print("paused");
+        break;
+      case AppLifecycleState.detached:
+        print("detached");
+        await detachedCallBack();
         break;
       case AppLifecycleState.resumed:
+        print("resume");
         await resumeCallBack();
         break;
     }
@@ -99,12 +110,55 @@ class _VideoContainerState extends State<VideoContainer>
     WidgetsBinding.instance.addObserver(
       new LifecycleEventHandler(
         resumeCallBack: () {
-          videoPlayerController.isActive = true;
+          // videoPlayerController.isActive = true;
+          this.hideNotification();
         },
         suspendingCallBack: () {
-          videoPlayerController.isActive = false;
+          // videoPlayerController.isActive = false;
+          this.showNotification("HLS Video Player", "Motivational Video for getting things DONE!");
+        },
+        detachedCallBack: () {
+          this.hideNotification();
         })
     );
+    
+    MediaNotification.setListener('pause', () {
+      setState(() => videoPlayerController.videoController.pause());
+    });
+
+    MediaNotification.setListener('play', () {
+      setState(() => videoPlayerController.videoController.play());
+    });
+    
+    MediaNotification.setListener('next', () {
+      
+    });
+
+    MediaNotification.setListener('prev', () {
+      
+    });
+
+    MediaNotification.setListener('select', () {
+      
+    });
+  }
+  
+  Future<void> hideNotification() async {
+    try {
+      await MediaNotification.hide();
+      // setState(() => status = 'hidden');
+  } on PlatformException {
+
+    }
+  }
+
+  Future<void> showNotification(title, author) async {
+    try {
+      await MediaNotification.show(title: title, author: author, play: videoPlayerController.videoController.value.isPlaying);
+      // setState(() => status = 'play');
+    } on PlatformException {
+
+    }
   }
 
   initVideoPlayerController(List<M3uGenericEntry> list) {
@@ -151,6 +205,7 @@ class _VideoContainerState extends State<VideoContainer>
 
   @override
   void dispose() {
+    this.hideNotification();
     super.dispose();
     // _controller.dispose();
   }
