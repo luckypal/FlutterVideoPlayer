@@ -204,7 +204,7 @@ class _VideoContainerState extends State<VideoContainer>
       playList = pList;
         
       this.videoPlayerController = new HLSVideoPlayerController(
-        curPlaylistIndex: 0,
+        curPlaylistIndex: index,
         playList: playList,
         videoController: videoPlayerController
       );
