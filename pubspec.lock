@@ -102,13 +102,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.12.6"
-  media_notification_control:
-    dependency: "direct dev"
-    description:
-      name: media_notification_control
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.4"
   meta:
     dependency: transitive
     description:
