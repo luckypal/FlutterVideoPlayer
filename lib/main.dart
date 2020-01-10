@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:hlsvideoplayer/videoitem.dart';
 import 'package:video_player/video_player.dart';
 import 'package:m3u/m3u.dart';
-import 'package:media_notification/media_notification.dart';
+import 'package:media_notification_control/media_notification.dart';
 import 'package:connectivity/connectivity.dart';
 
 import 'hlsvideoplayer.dart';
