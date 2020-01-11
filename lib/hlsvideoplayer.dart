@@ -495,19 +495,19 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
   }
 
   Future<dynamic> pushFullScreenWidget() async {
-    final isAndroid = Theme.of(context).platform == TargetPlatform.android;
+    // final isAndroid = Theme.of(context).platform == TargetPlatform.android;
     final TransitionRoute<Null> route = PageRouteBuilder<Null>(
       settings: RouteSettings(isInitialRoute: false),
       pageBuilder: _fullScreenRoutePageBuilder,
     );
 
     SystemChrome.setEnabledSystemUIOverlays([]);
-    if (isAndroid) {
+    // if (isAndroid) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
-    }
+    // }
 
     widget.controller.isFullScreen = true;
       Wakelock.enable();
