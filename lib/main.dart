@@ -8,6 +8,7 @@ import 'package:hlsvideoplayer/videoitem.dart';
 import 'package:video_player/video_player.dart';
 import 'package:m3u/m3u.dart';
 // import 'package:media_notification_control/media_notification.dart';
+import 'package:flutter_media_notification/flutter_media_notification.dart';
 import 'package:connectivity/connectivity.dart';
 
 import 'hlsvideoplayer.dart';
@@ -123,7 +124,7 @@ class _VideoContainerState extends State<VideoContainer>
         })
     );
     
-    /*MediaNotification.setListener('pause', () {
+    MediaNotification.setListener('pause', () {
       setState(() => videoPlayerController.videoController.pause());
     });
 
@@ -141,12 +142,12 @@ class _VideoContainerState extends State<VideoContainer>
 
     MediaNotification.setListener('select', () {
       
-    });*/
+    });
   }
   
   Future<void> hideNotification() async {
     try {
-      // await MediaNotification.hide();
+      await MediaNotification.hideNotification();
       // setState(() => status = 'hidden');
   } on PlatformException {
 
@@ -155,7 +156,7 @@ class _VideoContainerState extends State<VideoContainer>
 
   Future<void> showNotification(title, author) async {
     try {
-      // await MediaNotification.show(title: title, author: author, play: videoPlayerController.videoController.value.isPlaying);
+      await MediaNotification.showNotification(title: title, author: author, isPlaying: videoPlayerController.videoController.value.isPlaying);
       // setState(() => status = 'play');
     } on PlatformException {
 

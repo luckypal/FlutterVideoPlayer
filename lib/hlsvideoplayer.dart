@@ -204,13 +204,13 @@ class HLSVideoPlayerState extends State<HLSVideoPlayer> {
       await widget.controller.videoController.setLooping(true);
       await widget.controller.videoController.play();
       await widget.controller.videoController.seekTo(Duration(seconds: curPosition.toInt()));
-      // await widget.controller.videoController.setSpeed(widget.controller.videoSpeed);
+      await widget.controller.videoController.setSpeed(widget.controller.videoSpeed);
       startOneshotTimer();
     });
   }
 
   void onSetSpeed(double speed) {
-    // widget.controller.videoController.setSpeed(speed);
+    widget.controller.videoController.setSpeed(speed);
 
     setState(() {
       widget.controller.videoSpeed = speed;
